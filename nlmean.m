@@ -1,13 +1,14 @@
 %% Developer-defined variables
-filename = 'lena.png';
-patch_size = 7;         % must always be odd numbered
-window_size = 9;        % search window, must always be odd numbered
+filename = 'Indian_pines.mat';
+patch_size = 3;         % must always be odd numbered
+window_size = 5;        % search window, must always be odd numbered
 h = 8; 
 
 %% Preprocessing
-% img = importdata('Indian_pines.mat');
-img = imread(filename);
-img = imnoise(img,'gaussian', 0, 0.05);
+img = importdata(filename);
+% img = imread('lena.png');
+% img = imnoise(img,'gaussian', 0, 0.02);
+% imwrite(img, 'noised_lena_ps3_ws5_h8.png')
 
 % make the patches and display them first
 [height, width, dims] = size(img);
@@ -22,6 +23,7 @@ num_patches = (height - 2 * patch_padding) * (width - 2 * patch_padding);
 fprintf('Number of patches %i\n', num_patches);
 
 %% Building the weight matrix
+% profile on
 fprintf('Building weight matrix ...\n');
 
 weights = zeros(num_patches, window_size);
@@ -78,8 +80,9 @@ for j = patch_padding + 1: height - patch_padding
 end
 
 fprintf('Finished modifying pixels.\n');
-imshow(img);
-imwrite(img, 'modified_lena.png')
+% imshow(img);
+% imwrite(img, 'modified_lena_ps3_ws5_h8.png')
+% profile viewer
 
 %% Helper functions
 

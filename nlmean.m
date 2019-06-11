@@ -3,6 +3,7 @@ filename = 'Indian_pines.mat';
 patch_size = 3;         % must always be odd numbered
 window_size = 5;        % search window, must always be odd numbered
 h = 8; 
+K = 7;
 
 %% Preprocessing
 img = importdata(filename);
@@ -21,6 +22,48 @@ search_padding = floor(window_size/2);
 % this is only the number of patches within the search window
 num_patches = (height - 2 * patch_padding) * (width - 2 * patch_padding);
 fprintf('Number of patches %i\n', num_patches);
+
+%% Build the sigma matrix
+% initialize the matrix 
+sigmas = zeros(num_patches, 1);  
+row = 1;
+for j = patch_padding + 1: height - patch_padding
+    for i = patch_padding + 1: width - patch_padding
+        % get the main patch
+        main_patch = get_patch(img, i, j, patch_padding, patch_size, dims);
+        % compare other patches with patch
+        dists = zeros(window_size * window_size, 1);
+        
+        iter = 1;
+        for l = j - search_padding:j + search_padding
+            for k = i - search_padding: i + search_padding
+                % get the compare patch
+                
+                 % boundary checks for search window
+                if k < patch_padding + 1 ...             % left bound
+                     || l < patch_padding + 1 ...         % up bound
+                     || k > width - patch_padding ...     % right bound
+                     || l > height - patch_padding        % down bound
+                     continue   % ignore out of bounds patches
+                end
+                compare_patch = get_patch(img, k, l, patch_padding, patch_size, dims);
+                
+                % get the distance between patches
+                dists(iter) = get_distance(main_patch, compare_patch); 
+                iter = iter + 1;
+            end            
+        end 
+        
+        % sorted non zero array
+        if nnz(~dists) >= K
+            sigmas(row) = max(dists);
+        else
+            nonzeros = sort(dists(dists ~= 0));
+            sigmas(row) = nonzeros(K);
+        end
+        row = row + 1;
+    end
+ end
 
 %% Building the weight matrix
 % profile on
@@ -51,11 +94,14 @@ for j = patch_padding + 1: height - patch_padding
                 
                 % get the distance between patches
                 dist = get_distance(main_patch, compare_patch); 
-                weights(row, col) = exp(-dist./(h^2));       
+                weights(row, col) = dist;
+%                 weights(row, col) = exp(-dist./(h^2));       
             end            
         end 
     end
 end
+
+
 
 % normalize the weights
 weight_sums = sum(weights,2);
